@@ -162,6 +162,30 @@ namespace golf1052.Mastodon
             return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
         }
 
+        public async Task<MastodonStatus> ViewPublicStatus(string id)
+        {
+            Func<HttpRequestMessage> getRequest = GetStatusRequest(id);
+            HttpResponseMessage responseMessage = await SendRequest(getRequest);
+            return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
+        }
+
+        public async Task<MastodonStatus> ViewPrivateStatus(string id)
+        {
+            Func<HttpRequestMessage> getRequest = GetStatusRequest(id);
+            HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
+            return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
+        }
+
+        private Func<HttpRequestMessage> GetStatusRequest(string id)
+        {
+            return () =>
+            {
+                Url url = new Url(endpoint).AppendPathSegments("api", "v1", "statuses", id);
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+                return requestMessage;
+            };
+        }
+
         public async Task<MastodonAttachment> UploadMedia(Stream stream)
         {
             MemoryStream? newStream = null;
