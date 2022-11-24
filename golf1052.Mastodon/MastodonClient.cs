@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace golf1052.Mastodon
 {
@@ -26,6 +27,7 @@ namespace golf1052.Mastodon
         private readonly Uri endpoint;
         private readonly HttpClient httpClient;
         private readonly ILogger<MastodonClient> logger;
+        private readonly JsonSerializerSettings serializer;
 
         public MastodonClient(string endpoint) : this(endpoint, new HttpClient(), NullLogger<MastodonClient>.Instance)
         {
@@ -45,6 +47,13 @@ namespace golf1052.Mastodon
             this.endpoint = endpoint;
             this.httpClient = httpClient;
             this.logger = logger;
+            serializer = new JsonSerializerSettings()
+            {
+                ContractResolver = new DefaultContractResolver()
+                {
+                    NamingStrategy = new SnakeCaseNamingStrategy()
+                }
+            };
         }
 
         public async Task<MastodonApplication> CreateApplication(string clientName,
@@ -87,7 +96,7 @@ namespace golf1052.Mastodon
             };
 
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
-            return JsonConvert.DeserializeObject<MastodonApplication>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonApplication>(responseMessage);
         }
 
         public async Task<MastodonToken> ObtainToken(string grantType,
@@ -127,7 +136,7 @@ namespace golf1052.Mastodon
             };
 
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
-            return JsonConvert.DeserializeObject<MastodonToken>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonToken>(responseMessage);
         }
 
         public async Task<MastodonStatus> PublishStatus(string status,
@@ -159,21 +168,21 @@ namespace golf1052.Mastodon
             };
 
             HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
-            return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonStatus>(responseMessage);
         }
 
         public async Task<MastodonStatus> ViewPublicStatus(string id)
         {
             Func<HttpRequestMessage> getRequest = GetStatusRequest(id);
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
-            return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonStatus>(responseMessage);
         }
 
         public async Task<MastodonStatus> ViewPrivateStatus(string id)
         {
             Func<HttpRequestMessage> getRequest = GetStatusRequest(id);
             HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
-            return JsonConvert.DeserializeObject<MastodonStatus>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonStatus>(responseMessage);
         }
 
         private Func<HttpRequestMessage> GetStatusRequest(string id)
@@ -208,7 +217,7 @@ namespace golf1052.Mastodon
             {
                 newStream.Dispose();
             }
-            return JsonConvert.DeserializeObject<MastodonAttachment>(await responseMessage.Content.ReadAsStringAsync())!;
+            return await Deserialize<MastodonAttachment>(responseMessage);
         }
 
         public async Task<MastodonAttachment?> GetAttachment(string id)
@@ -226,7 +235,7 @@ namespace golf1052.Mastodon
             }
             else
             {
-                return JsonConvert.DeserializeObject<MastodonAttachment>(await responseMessage.Content.ReadAsStringAsync())!;
+                return await Deserialize<MastodonAttachment>(responseMessage);
             }
         }
 
@@ -316,6 +325,11 @@ namespace golf1052.Mastodon
             }
             while (tries <= maxRetries);
             throw new MastodonException($"Hit limit of {maxRetries}");
+        }
+
+        private async Task<T> Deserialize<T>(HttpResponseMessage responseMessage)
+        {
+            return JsonConvert.DeserializeObject<T>(await responseMessage.Content.ReadAsStringAsync(), serializer)!;
         }
     }
 }
