@@ -58,27 +58,18 @@ namespace golf1052.Mastodon
         }
 
         public async Task<MastodonApplication> CreateApplication(string clientName,
-            List<string> redirectUris,
+            string redirectUri,
             List<string>? scopes = null,
             string? website = null)
         {
-            if (redirectUris == null || redirectUris.Count == 0)
-            {
-                throw new ArgumentException("Must have at least 1 redirect uri", nameof(redirectUris));
-            }
-
             Func<HttpRequestMessage> getRequest = () =>
             {
                 Url url = new Url(endpoint).AppendPathSegments("api", "v1", "apps");
                 List<KeyValuePair<string, string>> parameters = new List<KeyValuePair<string, string>>()
                 {
-                    new KeyValuePair<string, string>("client_name", clientName)
+                    new KeyValuePair<string, string>("client_name", clientName),
+                    new KeyValuePair<string, string>("redirect_uris", redirectUri)
                 };
-
-                foreach (var redirectUri in redirectUris)
-                {
-                    parameters.Add(new KeyValuePair<string, string>("redirect_uris", redirectUri));
-                }
 
                 if (scopes != null && scopes.Count > 0)
                 {
