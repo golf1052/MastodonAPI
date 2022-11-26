@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Flurl;
+using golf1052.Mastodon.Models.Accounts;
 using golf1052.Mastodon.Models.Apps;
 using golf1052.Mastodon.Models.Apps.OAuth;
 using golf1052.Mastodon.Models.Statuses;
@@ -99,6 +100,31 @@ namespace golf1052.Mastodon
             return await Deserialize<MastodonApplication>(responseMessage);
         }
 
+        public string AuthorizeUser(string redirectUri, List<string>? scope = null, bool? forceLogin = null, string? lang = null)
+        {
+            Url url = new Url(endpoint).AppendPathSegments("oauth", "authorize")
+                .SetQueryParam("response_type", "code")
+                .SetQueryParam("client_id", ClientId)
+                .SetQueryParam("redirect_uri", redirectUri);
+
+            if (scope != null && scope.Count > 0)
+            {
+                url.SetQueryParam("scope", string.Join(' ', scope));
+            }
+
+            if (forceLogin != null)
+            {
+                url.SetQueryParam("force_login", forceLogin.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(lang))
+            {
+                url.SetQueryParam("lang", lang);
+            }
+
+            return url;
+        }
+
         public async Task<MastodonToken> ObtainToken(string grantType,
             string redirectUri,
             string? code = null,
@@ -109,6 +135,11 @@ namespace golf1052.Mastodon
                 throw new MastodonException("Client ID not set. Client ID must be set to obtain a token.");
             }
 
+            if (string.IsNullOrWhiteSpace(ClientSecret))
+            {
+                throw new MastodonException($"Client secret not set. Client secret must be set to obtain a token.");
+            }
+
             Func<HttpRequestMessage> getRequest = () =>
             {
                 Url url = new Url(endpoint).AppendPathSegments("oauth", "token");
@@ -116,6 +147,7 @@ namespace golf1052.Mastodon
                 {
                     new KeyValuePair<string, string>("grant_type", grantType),
                     new KeyValuePair<string, string>("client_id", ClientId),
+                    new KeyValuePair<string, string>("client_secret", ClientSecret),
                     new KeyValuePair<string, string>("redirect_uri", redirectUri)
                 };
 
@@ -137,6 +169,19 @@ namespace golf1052.Mastodon
 
             HttpResponseMessage responseMessage = await SendRequest(getRequest);
             return await Deserialize<MastodonToken>(responseMessage);
+        }
+
+        public async Task<MastodonAccount> VerifyCredentials()
+        {
+            Func<HttpRequestMessage> getRequest = () =>
+            {
+                Url url = new Url(endpoint).AppendPathSegments("api", "v1", "accounts", "verify_credentials");
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, url);
+                return requestMessage;
+            };
+
+            HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
+            return await Deserialize<MastodonAccount>(responseMessage);
         }
 
         public async Task<MastodonStatus> PublishStatus(string status,
@@ -329,7 +374,8 @@ namespace golf1052.Mastodon
 
         private async Task<T> Deserialize<T>(HttpResponseMessage responseMessage)
         {
-            return JsonConvert.DeserializeObject<T>(await responseMessage.Content.ReadAsStringAsync(), serializer)!;
+            string responseString = await responseMessage.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<T>(responseString, serializer)!;
         }
     }
 }
