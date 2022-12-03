@@ -231,6 +231,19 @@ namespace golf1052.Mastodon
             };
         }
 
+        public async Task<MastodonStatus> DeleteStatus(string id)
+        {
+            Func<HttpRequestMessage> getRequest = () =>
+            {
+                Url url = new Url(endpoint).AppendPathSegments("api", "v1", "statuses", id);
+                HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Delete, url);
+                return requestMessage;
+            };
+
+            HttpResponseMessage responseMessage = await SendAuthorizedRequest(getRequest);
+            return await Deserialize<MastodonStatus>(responseMessage);
+        }
+
         public async Task<MastodonAttachment> UploadMedia(Stream stream)
         {
             MemoryStream? newStream = null;
