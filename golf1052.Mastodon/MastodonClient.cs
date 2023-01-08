@@ -177,6 +177,7 @@ namespace golf1052.Mastodon
 
         public async Task<MastodonStatus> PublishStatus(string status,
             List<string>? mediaIds = null,
+            string? inReplyToId = null,
             string? visibility = null)
         {
             Func<HttpRequestMessage> getRequest = () =>
@@ -192,6 +193,10 @@ namespace golf1052.Mastodon
                     {
                         parameters.Add(new KeyValuePair<string, string>("media_ids[]", mediaId));
                     }
+                }
+                if (!string.IsNullOrEmpty(inReplyToId))
+                {
+                    parameters.Add(new KeyValuePair<string, string>("in_reply_to_id", inReplyToId));
                 }
                 if (!string.IsNullOrWhiteSpace(visibility))
                 {
