@@ -176,7 +176,7 @@ namespace golf1052.Mastodon
         }
 
         public async Task<MastodonStatus> PublishStatus(string status,
-            List<string>? mediaIds = null,
+            IEnumerable<string>? mediaIds = null,
             string? inReplyToId = null,
             string? visibility = null)
         {
