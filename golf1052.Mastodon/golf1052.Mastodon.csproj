@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <Title>golf1052.Mastodon</Title>
     <Authors>golf1052</Authors>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Description>A C# Mastodon API</Description>
     <PackageProjectUrl>https://github.com/golf1052/MastodonAPI</PackageProjectUrl>
     <RepositoryUrl>https://github.com/golf1052/MastodonAPI</RepositoryUrl>
