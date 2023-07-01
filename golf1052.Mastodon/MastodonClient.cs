@@ -9,6 +9,7 @@ using Flurl;
 using golf1052.Mastodon.Models.Accounts;
 using golf1052.Mastodon.Models.Apps;
 using golf1052.Mastodon.Models.Apps.OAuth;
+using golf1052.Mastodon.Models.OEmbed;
 using golf1052.Mastodon.Models.Statuses;
 using golf1052.Mastodon.Models.Statuses.Media;
 using Microsoft.Extensions.Logging;
@@ -290,6 +291,34 @@ namespace golf1052.Mastodon
             else
             {
                 return await Deserialize<MastodonAttachment>(responseMessage);
+            }
+        }
+
+        public async Task<MastodonOEmbed> GetOEmbed(string url, int? maxWidth = null, int? maxHeight = null)
+        {
+            Func<HttpRequestMessage> getRequest = () =>
+            {
+                Url uri = new Url(endpoint).AppendPathSegments("api", "oembed");
+                uri.SetQueryParam("url", url);
+                if (maxWidth.HasValue)
+                {
+                    uri.SetQueryParam("maxwidth", maxWidth.Value);
+                }
+                if (maxHeight.HasValue)
+                {
+                    uri.SetQueryParam("maxheight", maxHeight.Value);
+                }
+                return new HttpRequestMessage(HttpMethod.Get, uri);
+            };
+
+            HttpResponseMessage responseMessage = await SendRequest(getRequest);
+            if (responseMessage.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                throw new MastodonException("OEmbed not found.");
+            }
+            else
+            {
+                return await Deserialize<MastodonOEmbed>(responseMessage);
             }
         }
 
