@@ -35,6 +35,10 @@ namespace golf1052.Mastodon
         {
         }
 
+        public MastodonClient(string endpoint, HttpClient httpClient) : this(endpoint, httpClient, NullLogger<MastodonClient>.Instance)
+        {
+        }
+
         public MastodonClient(string endpoint, ILogger<MastodonClient> logger) : this(endpoint, new HttpClient(), logger)
         {
         }
@@ -176,7 +180,7 @@ namespace golf1052.Mastodon
             return await Deserialize<MastodonAccount>(responseMessage);
         }
 
-        public async Task<MastodonStatus> PublishStatus(string status,
+        public virtual async Task<MastodonStatus> PublishStatus(string status,
             IEnumerable<string>? mediaIds = null,
             string? inReplyToId = null,
             string? visibility = null)
@@ -250,7 +254,7 @@ namespace golf1052.Mastodon
             return await Deserialize<MastodonStatus>(responseMessage);
         }
 
-        public async Task<MastodonAttachment> UploadMedia(Stream stream)
+        public virtual async Task<MastodonAttachment> UploadMedia(Stream stream)
         {
             MemoryStream? newStream = null;
             Func<HttpRequestMessage> getRequest = () =>
@@ -275,7 +279,7 @@ namespace golf1052.Mastodon
             return await Deserialize<MastodonAttachment>(responseMessage);
         }
 
-        public async Task<MastodonAttachment?> GetAttachment(string id)
+        public virtual async Task<MastodonAttachment?> GetAttachment(string id)
         {
             Func<HttpRequestMessage> getRequest = () =>
             {
